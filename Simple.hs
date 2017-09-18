@@ -19,7 +19,7 @@ fib x
 fib2    :: Integer -> Integer
 fib2 x
   | x >= 0 = fib2' 0 0 1
-  | otherwise = error "undefined for negative input"
+  | otherwise = error "undefined for negative input" 
   where
   fib2' i x0 x1
     | x == i = x0
@@ -41,16 +41,20 @@ c n
   | otherwise = error "undefined for values <= 0"
   where
   c' i n0
-    | n0         == 1 = i
-    | n0 `mod` 2 == 0 = c' (i+1) (n0 `div` 2)
-    | n0 `mod` 2 == 1 = c' (i+1) (n0*3+1)
-    | otherwise       = error "can't be reached"
+    | n0        == 1 = i
+    | mod n0  2 == 0 = c' (i + 1) (div n0  2)
+    | mod n0  2 == 1 = c' (i + 1) (n0 * 3 + 1)
+    | otherwise      = error "can't be reached"
 
 
 -- Definieren Sie ein endrekurive Variante von c
 
 c1      :: Integer -> Integer
-c1 = undefined
+c1 n
+  | n == 1  = 0
+  | n <  0  = error "foo"
+  | mod n 2 == 0 = 1 + c1 (div n 2)
+  | mod n 2 == 1 = 1 + c1 (n * 3 + 1)
 
 
 -- Definieren Sie eine Funktion cmax, die für ein
@@ -79,14 +83,14 @@ imax f lb ub
 
 cmax1   :: Integer -> Integer -> Integer
 cmax1
-    = imax c
+    = imax c1
 
 -- Entwickeln Sie eine Funktion,
 -- die die Position und den Wert bestimmt, an der
 -- das Maximum angenommen wird.
 -- Versuchen Sie, eine endrekursive Lösung zu finden
 -- (mit einer lokalen Hilfsfunktion).
-
+{-
 imax2   :: (Integer -> Integer) -> Integer -> Integer -> (Integer, Integer)
 imax2 f lb ub
   | lb == ub  = (0, f lb)
@@ -100,3 +104,4 @@ imax2 f lb ub
 
 
 -- ----------------------------------------
+-}
