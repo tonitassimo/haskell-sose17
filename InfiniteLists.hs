@@ -5,9 +5,7 @@ module InfiniteLists where
 -- names = ["a".."z", "a1".."z1", "a2".."z2", ...]
 
 names :: [String]
-names = combos ['a'..'z']
-  where
-  combos lst = map (:[]) lst
+names = [ y:(if x > 0 then (show x) else []) | x <- [0..], y <- ['a'..'z'] ]
 
 temp :: String
 temp =  ['a'..'z'] ++ ['0'..'9']
