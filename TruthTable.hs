@@ -9,7 +9,15 @@ type TruthTable = [[Bool]]
 -- | generate a truth table for n variables
 
 truthTable :: Int -> TruthTable
-truthTable n = undefined
+truthTable n
+  | n == 0    = [[]]
+  | n < 0     = error "not defined for negative values"
+  | otherwise = map (True:) table ++ map(False:) table
+  where
+    table = truthTable (n-1)
+
+temp :: TruthTable
+temp = [[x,y,z] | x <- [True, False], y <- [True, False], z <- [True, False] ]
 
 ppTruthTable :: TruthTable -> String
 ppTruthTable tt
