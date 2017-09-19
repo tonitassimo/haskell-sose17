@@ -16,9 +16,6 @@ truthTable n
   where
     table = truthTable (n-1)
 
-temp :: TruthTable
-temp = [[x,y,z] | x <- [True, False], y <- [True, False], z <- [True, False] ]
-
 ppTruthTable :: TruthTable -> String
 ppTruthTable tt
   = unlines (map ppRow tt)
