@@ -19,7 +19,7 @@ fib x
 fib2    :: Integer -> Integer
 fib2 x
   | x >= 0 = fib2' 0 0 1
-  | otherwise = error "undefined for negative input" 
+  | otherwise = error "undefined for negative input"
   where
   fib2' i x0 x1
     | x == i = x0
@@ -34,9 +34,18 @@ fib2 x
 -- Folgende Reduktionsregel sind dabei anzuwenden: Wenn n gerade ist,
 -- so wird n halbiert, wenn n ungerade ist, so wird n verdreifacht und um
 -- 1 erhöht.
-
 c       :: Integer -> Integer
-c n 
+c n
+  | n == 1  = 0
+  | n <  0  = error "foo"
+  | mod n 2 == 0 = 1 + c1 (div n 2)
+  | mod n 2 == 1 = 1 + c1 (n * 3 + 1)
+
+
+-- Definieren Sie ein endrekurive Variante von c
+
+c1      :: Integer -> Integer
+c1 n
   | n > 0 = c' 0 n
   | otherwise = error "undefined for values <= 0"
   where
@@ -47,21 +56,10 @@ c n
     | otherwise      = error "can't be reached"
 
 
--- Definieren Sie ein endrekurive Variante von c
-
-c1      :: Integer -> Integer
-c1 n
-  | n == 1  = 0
-  | n <  0  = error "foo"
-  | mod n 2 == 0 = 1 + c1 (div n 2)
-  | mod n 2 == 1 = 1 + c1 (n * 3 + 1)
-
-
 -- Definieren Sie eine Funktion cmax, die für ein
 -- Intervall von Zahlen das Maximum der
 -- Collatz-Funktion berechnet. Nutzen Sie die
 -- vordefinierten Funkt min und max.
-
 cmax    :: Integer -> Integer -> Integer
 cmax lb ub
   | lb == ub = c lb
@@ -73,7 +71,6 @@ cmax lb ub
 -- Intervall von Zahlen das Maximum einer
 -- ganzzahligen Funktion berechnet. Formulieren
 -- Sie die obige Funktion cmax so um, dass sie mit imax arbeitet.
-
 imax    :: (Integer -> Integer) -> Integer -> Integer -> Integer
 imax f lb ub
   | lb == ub = f lb
@@ -85,23 +82,19 @@ cmax1   :: Integer -> Integer -> Integer
 cmax1
     = imax c1
 
+
 -- Entwickeln Sie eine Funktion,
 -- die die Position und den Wert bestimmt, an der
 -- das Maximum angenommen wird.
 -- Versuchen Sie, eine endrekursive Lösung zu finden
 -- (mit einer lokalen Hilfsfunktion).
-{-
 imax2   :: (Integer -> Integer) -> Integer -> Integer -> (Integer, Integer)
 imax2 f lb ub
-  | lb == ub  = (0, f lb)
-  | lb < ub   = imax2' 0 f lb ub
-  | otherwise = error "empty interval"
+  | lb <= ub    = imax2' f lb ub 1 1
+  | otherwise   = error "empty interval"
   where
-  imax2' max f lb ub
-    | lb == ub  = (lb, max)
-    | lb < ub   = imax2' (max `max` fb lb) f (lb+1) ub
-    | otherwise = error "empty interval"
-
-
--- ----------------------------------------
--}
+  -- function, lower, upper, maximum, maximumIndex
+  -- nicht schoen, aber selten 42 :)
+  imax2' f lb ub m mi
+    | lb >  ub    = (mi, m)
+    | lb <= ub    = imax2' f (lb + 1) ub (max m (f lb)) ( if m < f lb then lb else mi )
