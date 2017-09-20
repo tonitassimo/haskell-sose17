@@ -149,17 +149,15 @@ inits' xs = foldr func [[]] xs
 join' :: a -> [[a]] -> [a]
 join' c []     = []
 join' c (x:[]) = x
---join' c (x:xs) = x ++ concat ( map (c++)  xs )
 join' c (x:xs) = x ++ [c] ++ join' c xs
 
 -- | splits the input into sublists at delimiter
 --   1. arg is the delimiter
 --   the delimiter does not occur in elements of result list
 
-split' :: Eq a => a -> [a] -> [[a]]
-split' c []     = []
+split' :: (Eq a) => a -> [a] -> [[a]]
+split' c [] = [[]]
 split' c (x:xs)
-  | c /= x    = [x] : split' c xs
-  | otherwise = split' c xs
-
--- ----------------------------------------
+  | x == c    = [] : ys : yss
+  | otherwise = (x : ys) : yss
+  where (ys:yss) = split' c xs
