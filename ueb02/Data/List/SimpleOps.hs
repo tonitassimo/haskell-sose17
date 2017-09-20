@@ -20,21 +20,21 @@ import Prelude hiding (splitAt)
 
 nub :: Eq a => [a] -> [a]
 nub [] = []
-nub (x : xs) = undefined
+nub (x : xs) = x : nub (filter (/= x) xs)
 
 
 -- .2 nub with list comprehension
 
 nub' :: Eq a => [a] -> [a]
 nub' [] = []
-nub' (x : xs) = undefined
+nub' (x : xs) = [ x | x  <- x:xs, x == x ]
 
 
 -- .3 nub with foldr
 -- after chapter about folds
 
 nub'' :: Eq a => [a] -> [a]
-nub'' = undefined
+nub'' = undefined 
 
 
 -- ----------------------------------------
@@ -61,7 +61,11 @@ splitAt i xs = (take i xs, drop i xs)
 
 -- the impl
 splitAt' :: Int -> [a] -> ([a],[a])
-splitAt' = undefined
+splitAt' i [] = ([], [])
+splitAt' 0 xs = ([], xs)
+splitAt' i (x:xs) = (x:xs', xs'')
+  where
+    (xs', xs'') = splitAt' (i-1) xs
 
 -- ----------------------------------------
 
@@ -71,7 +75,10 @@ splitAt' = undefined
 
 -- 1. impl: direct or with map
 intercalate :: [a] -> [[a]] -> [a]
-intercalate = undefined
+intercalate ys []     = []
+intercalate ys (x:[]) = x
+intercalate ys (x:xs) = x ++ concat ( map (ys++)  xs )
+
 
 -- 2. impl: with foldr
 -- after chapter about folds
@@ -87,12 +94,12 @@ intercalate' = undefined
 
 -- the spec
 partition :: (a -> Bool) -> [a] -> ([a], [a])
-partition p xs
-  = (filter p xs, filter (not . p) xs)
+partition p xs = (filter p xs, filter (not . p) xs)
 
 -- 1. impl: direct
 partition' :: (a -> Bool) -> [a] -> ([a], [a])
-partition' = undefined
+partition' p [] = ([], [])
+partition' p xs = (filter p xs, filter (not . p) xs)
 
 -- 2. impl: with foldr
 -- after chapter about folds
@@ -107,13 +114,14 @@ partition'' = undefined
 -- 1. impl: direct
 
 inits        :: [a] -> [[a]]
-inits = undefined
+inits []     = [[]]
+inits (x:xs) = [] : (map (x:) (inits xs))
 
 -- 2. impl: with foldr
 -- after chapter about folds
 
 inits'        :: [a] -> [[a]]
-inits' = undefined
+inits' xs = undefined   
 
 -- ----------------------------------------
 
@@ -128,13 +136,18 @@ inits' = undefined
 --
 
 join' :: a -> [[a]] -> [a]
-join' = undefined
+join' c []     = []
+join' c (x:[]) = x 
+join' c (x:xs) = x ++ [c] ++ join' c xs
 
 -- | splits the input into sublists at delimiter
 --   1. arg is the delimiter
 --   the delimiter does not occur in elements of result list
 
 split' :: Eq a => a -> [a] -> [[a]]
-split' = undefined
+split' c []     = []
+split' c (x:xs)
+  | c /= x    = [x] : split' c xs
+  | otherwise = split' c xs 
 
 -- ----------------------------------------
