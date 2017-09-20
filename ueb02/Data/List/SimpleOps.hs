@@ -27,14 +27,14 @@ nub (x : xs) = x : nub (filter (/= x) xs)
 
 nub' :: Eq a => [a] -> [a]
 nub' [] = []
-nub' (x : xs) = [ x | x  <- x:xs, x == x ]
+nub' (x : xs) = x : nub' [ y | y <- xs, x /= y ]
 
 
 -- .3 nub with foldr
 -- after chapter about folds
 
 nub'' :: Eq a => [a] -> [a]
-nub'' = undefined 
+nub'' n = foldr (\y ys -> y : (filter (/=y) ys)) [] n
 
 
 -- ----------------------------------------
@@ -83,7 +83,11 @@ intercalate ys (x:xs) = x ++ concat ( map (ys++)  xs )
 -- 2. impl: with foldr
 -- after chapter about folds
 intercalate' :: [a] -> [[a]] -> [a]
-intercalate' = undefined
+intercalate' ys []     = []
+intercalate' ys (x:[]) = x
+intercalate' ys (x:xs) = x ++ foldr func [] xs
+                         where
+                           func a as = ys++a++as
 
 -- ----------------------------------------
 
@@ -105,7 +109,10 @@ partition' p xs = (filter p xs, filter (not . p) xs)
 -- after chapter about folds
 
 partition'' :: (a -> Bool) -> [a] -> ([a], [a])
-partition'' = undefined
+partition'' p (xs) = (foldr func1 [] xs, foldr func2 [] xs)
+                     where
+                       func1 a b = filter p (a:b)
+                       func2 a b = filter (not . p) (a:b)
 
 -- ----------------------------------------
 --
@@ -121,7 +128,11 @@ inits (x:xs) = [] : (map (x:) (inits xs))
 -- after chapter about folds
 
 inits'        :: [a] -> [[a]]
-inits' xs = undefined   
+inits' []     = []
+inits' (x:xs) = [] : (map (x:) (inits xs))
+-- inits' (x:xs) = [] : (foldr func [] (inits' xs))
+                -- where
+                --   func a b = xs:a:b
 
 -- ----------------------------------------
 
@@ -137,7 +148,7 @@ inits' xs = undefined
 
 join' :: a -> [[a]] -> [a]
 join' c []     = []
-join' c (x:[]) = x 
+join' c (x:[]) = x
 join' c (x:xs) = x ++ [c] ++ join' c xs
 
 -- | splits the input into sublists at delimiter
@@ -148,6 +159,6 @@ split' :: Eq a => a -> [a] -> [[a]]
 split' c []     = []
 split' c (x:xs)
   | c /= x    = [x] : split' c xs
-  | otherwise = split' c xs 
+  | otherwise = split' c xs
 
 -- ----------------------------------------
