@@ -103,7 +103,9 @@ partition p xs = (filter p xs, filter (not . p) xs)
 -- 1. impl: direct
 partition' :: (a -> Bool) -> [a] -> ([a], [a])
 partition' p [] = ([], [])
-partition' p xs = (filter p xs, filter (not . p) xs)
+partition' p (x:xs) = if p x then (x:r1, r2) else (r1, x:r2)
+  where
+  (r1, r2) = partition' p xs
 
 -- 2. impl: with foldr
 -- after chapter about folds
@@ -149,6 +151,7 @@ inits' (x:xs) = [] : (map (x:) (inits xs))
 join' :: a -> [[a]] -> [a]
 join' c []     = []
 join' c (x:[]) = x
+--join' c (x:xs) = x ++ concat ( map (c++)  xs )
 join' c (x:xs) = x ++ [c] ++ join' c xs
 
 -- | splits the input into sublists at delimiter

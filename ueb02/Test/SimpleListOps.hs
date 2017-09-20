@@ -89,7 +89,7 @@ testNub
 
 testSplit :: IO ()
 testSplit
-  = do quickCheck  prop_join'split'
+  = do quickCheck  prop_partition'
 
 main :: IO ()
 main
