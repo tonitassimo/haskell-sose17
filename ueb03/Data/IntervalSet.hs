@@ -11,17 +11,18 @@ type Interval = (Int, Int)
 
 overlap :: Interval -> Interval -> Bool
 overlap (x1, y1) (x2, y2)
-  = undefined
+  | y1 >= x2  = True
+  | otherwise = False
 
 
 less :: Interval -> Interval -> Bool
 less (_x1, y1) (x2, _y2)
-  = undefined
+  = y1 < x2
 
 
 nullInterval :: Interval -> Bool
 nullInterval (x, y)
-  = undefined
+  = x > y
 
 
 -- merge 2 (overlapping) intervals

@@ -130,11 +130,9 @@ inits (x:xs) = [] : (map (x:) (inits xs))
 -- after chapter about folds
 
 inits'        :: [a] -> [[a]]
-inits' []     = []
-inits' (x:xs) = [] : (map (x:) (inits xs))
--- inits' (x:xs) = [] : (foldr func [] (inits' xs))
-                -- where
-                --   func a b = xs:a:b
+inits' xs = foldr func [[]] xs
+            where
+              func a b = [] : (map (a:) b)
 
 -- ----------------------------------------
 
