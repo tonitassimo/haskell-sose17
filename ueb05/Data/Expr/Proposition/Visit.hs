@@ -15,9 +15,12 @@ data Visitor r
 
 idExpr :: Visitor Expr
 idExpr
-  = undefined
+  = V { vLit = Lit, vVar = Var, vUnary = Unary, vBinary = Binary }
 
 visit :: Visitor r -> Expr -> r
-visit v e = undefined
+visit visitor (Lit e)          = vLit visitor e
+visit visitor (Var e)          = vVar visitor e
+visit visitor (Unary op e)     = (vUnary visitor) op $ visit v e
+visit visitor (Binary op l r)  = (vBinary visitor) op (visit visitor l) (visit visitor r)
 
 -- ----------------------------------------
