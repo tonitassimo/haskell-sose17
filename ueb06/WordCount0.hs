@@ -38,11 +38,11 @@ type Counters
 
 processText :: T.Text -> Counters
 processText t
-  = undefined . T.lines $ t
+  = toCounters . T.lines $ t
 
 -- process a single line
 toCounters :: T.Text -> Counters
-toCounters = undefined
+toCounters l = (Sum 1, (Sum (length (T.words l)), (Sum (T.length l), ())))
 
 -- --------------------
 --
