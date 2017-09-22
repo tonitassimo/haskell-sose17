@@ -42,16 +42,10 @@ bin Null r    = r
 bin l Null    = l
 bin l r       = Bin l r
 
---bin Null Null       = Null
---bin Null (Tip x)    = Tip x
---bin (Tip x) Null    = Tip x
---bin (Tip x) (Tip y) = Bin (Tip x) (Tip y)
---bin l r             = Bin l r
-
 instance Functor Tree where
- -- fmap :: (a -> b) -> Tree a -> Tree b
+  fmap f Null = Null
   fmap f (Tip x) = Tip (f x)
-  fmap f (Bin l r) = Bin (fmap f l) (fmap f r)
+  fmap f (Bin l r) = bin (fmap f l) (fmap f r)
 
 instance Applicative Tree where
   pure  = undefined
@@ -70,12 +64,14 @@ instance MonadPlus Tree where
   mplus = undefined
 
 instance Monoid (Tree a) where
-  mempty  = undefined
-  mappend = undefined
+  mempty  = Null
+  mappend = bin
 
 -- fold elements like in a list from right to left
 instance Foldable Tree where
-  foldr _ e t = undefined
+  foldr f e Null      = e
+  foldr f e (Tip x)   = f x e
+  foldr f e (Bin l r) = foldr f (foldr f e r) l
 
 -- ----------------------------------------
 -- classical visitor
@@ -83,25 +79,35 @@ instance Foldable Tree where
 visitTree :: b -> (a -> b) -> (b -> b -> b) -> Tree a -> b
 visitTree e tf bf = visit'
   where
-    visit' = undefined
+    visit' Null      = e
+    visit' (Tip x)   = tf x
+    visit' (Bin l r) = bf (visit' l) (visit' r)
 
 -- special visitors
 
 sizeTree :: Tree a -> Int
-sizeTree = visitTree undefined undefined undefined
+sizeTree = visitTree 0 (\x -> 1) (+)
 
 minDepth, maxDepth :: Tree a -> Int
-minDepth = visitTree undefined undefined undefined
-maxDepth = visitTree undefined undefined undefined
+minDepth = visitTree 0 (\x -> 1) (\l r -> 1 + min l r)
+maxDepth = visitTree 0 (\x -> 1) (\l r -> 1 + max l r)
 
 -- ----------------------------------------
 -- access functions
 
 viewL :: Tree a -> Maybe (a, Tree a)
-viewL = undefined
+viewL  Null = Nothing
+viewL (Tip x) = Just (x, Null)
+viewL (Bin l r) = Just (x, bin t r)
+  where
+  (Just (x, t)) = viewL l
 
 viewR :: Tree a -> Maybe (Tree a, a)
-viewR = undefined
+viewR Null = Nothing
+viewR (Tip x) = Just (Null, x)
+viewR (Bin l r) = Just (bin t l, x)
+  where
+ (Just (t, x)) = viewR r
 
 head :: Tree a -> a
 head = maybe (error "head: empty tree") fst . viewL
@@ -120,11 +126,11 @@ init = maybe (error "init: empty tree") fst . viewR
 
 -- | runs in O(n) due to the use of (:)
 toList :: Tree a -> [a]
-toList = foldr undefined undefined
+toList = foldr (:) []
 
 -- | runs in O(n * log n) due to the use of (++)
 toListSlow :: Tree a -> [a]
-toListSlow = visitTree undefined undefined undefined
+toListSlow = visitTree [] (:[]) (++)
 
 -- | build a balanced tree
 --
@@ -136,7 +142,11 @@ fromList = undefined
 
 -- strong balancing criterion
 fromList' :: [a] -> Tree a
-fromList' = undefined
+fromList' []  = Null
+fromList' [x] = Tip x
+fromList' xs  = bin (fromList' x) (fromList' y)
+  where
+  (x, y) = splitAt ( div ( length xs ) 2 ) xs
 
 -- list to the right
 fromList'' :: [a] -> Tree a
