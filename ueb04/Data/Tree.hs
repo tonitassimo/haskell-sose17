@@ -43,8 +43,8 @@ bin l Null    = l
 bin l r       = Bin l r
 
 instance Functor Tree where
-  fmap f Null = Null
-  fmap f (Tip x) = Tip (f x)
+  fmap f Null      = Null
+  fmap f (Tip x)   = Tip (f x)
   fmap f (Bin l r) = bin (fmap f l) (fmap f r)
 
 instance Applicative Tree where
@@ -86,26 +86,28 @@ visitTree e tf bf = visit'
 -- special visitors
 
 sizeTree :: Tree a -> Int
+-- sizeTree = visitTree 0 (const 1) (+)
 sizeTree = visitTree 0 (\x -> 1) (+)
 
 minDepth, maxDepth :: Tree a -> Int
-minDepth = visitTree 0 (\x -> 1) (\l r -> 1 + min l r)
-maxDepth = visitTree 0 (\x -> 1) (\l r -> 1 + max l r)
+-- have to sub one as we dont want to count the root of the tree
+minDepth = (visitTree 0 (\x -> 1) (\l r -> 1 + min l r)) - 1
+maxDepth = (visitTree 0 (\x -> 1) (\l r -> 1 + max l r)) - 1
 
 -- ----------------------------------------
 -- access functions
 
 viewL :: Tree a -> Maybe (a, Tree a)
-viewL  Null = Nothing
-viewL (Tip x) = Just (x, Null)
-viewL (Bin l r) = Just (x, bin t r)
+viewL  Null      = Nothing
+viewL (Tip x)    = Just (x, Null)
+viewL (Bin l r)  = Just (x, bin t r)
   where
   (Just (x, t)) = viewL l
 
 viewR :: Tree a -> Maybe (Tree a, a)
-viewR Null = Nothing
-viewR (Tip x) = Just (Null, x)
-viewR (Bin l r) = Just (bin t l, x)
+viewR Null       = Nothing
+viewR (Tip x)    = Just (Null, x)
+viewR (Bin l r)  = Just (bin t l, x)
   where
  (Just (t, x)) = viewR r
 
@@ -138,23 +140,28 @@ toListSlow = visitTree [] (:[]) (++)
 
 -- weak balancing criterion
 fromList :: [a] -> Tree a
-fromList = undefined
+fromList []  = Null
+fromList [x] = Tip x
+fromList xs  = bin (fromList l) (fromList r)
+  where
+  -- split at half
+  (l, r) = splitAt ( div ( length xs ) 2 ) xs
 
 -- strong balancing criterion
 fromList' :: [a] -> Tree a
 fromList' []  = Null
 fromList' [x] = Tip x
-fromList' xs  = bin (fromList' x) (fromList' y)
+fromList' xs  = bin (fromList' l) (fromList' r)
   where
-  (x, y) = splitAt ( div ( length xs ) 2 ) xs
+  (l, r) = splitAt ( div ( length xs ) 2 ) xs
 
 -- list to the right
 fromList'' :: [a] -> Tree a
-fromList'' = foldr (\ x t -> Tip x `bin` t) Null
+fromList'' = foldr (\x t -> Tip x `bin` t) Null
 
 -- list to the left
 fromList''' :: [a] -> Tree a
-fromList''' = foldl (\ t x -> t `bin` Tip x) Null
+fromList''' = foldl (\t x -> t `bin` Tip x) Null
 
 -- runtime differences between fromList, fromList', fromList'', fromList'''?
 -- differences in balancing quality?

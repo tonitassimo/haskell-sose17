@@ -24,21 +24,19 @@ prop_fromList''' xs
 -- strong balancing criterium
 -- length of paths may be differ at most by 1
 prop_balance :: Tree Int -> Bool
-prop_balance t
-  = undefined
+prop_balance t = maxDepth t - minDepth t <= 1
 
 -- weaker balancing criterium
 -- no path is longer than "ceiling (ld n)"
 -- but shorter paths are allowed
 
 prop_balance' :: Tree Int -> Bool
-prop_balance' t
-  = undefined
+prop_balance' t = (maxDepth t) <= (ceiling (logBase 2 (fromIntegral (sizeTree t))))
 
 -- ----------------------------------------
 
 quickCheck' :: Testable prop => prop -> IO ()
-quickCheck' = quickCheckWith stdArgs{maxSuccess=100}
+quickCheck' = quickCheckWith stdArgs{maxSuccess=100} . verbose
 
 testFromList :: IO ()
 testFromList
