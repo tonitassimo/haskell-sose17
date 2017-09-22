@@ -30,7 +30,8 @@ type VarEnv = [(Ident, Expr)]
 
 substVarsVisitor :: VarEnv -> Visitor Expr
 substVarsVisitor env = V { vLit    = Lit
-                         , vVar    = (\ident -> snd . head . filter ((==ident) . fst) $ env)
+--maybe (Var e) id (lookup e env)
+                         , vVar    = (\ident -> maybe (Var ident) id (lookup ident env))
                          , vUnary  = Unary
                          , vBinary = Binary
                          }

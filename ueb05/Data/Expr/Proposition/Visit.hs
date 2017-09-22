@@ -20,7 +20,7 @@ idExpr
 visit :: Visitor r -> Expr -> r
 visit visitor (Lit e)          = vLit visitor e
 visit visitor (Var e)          = vVar visitor e
-visit visitor (Unary op e)     = (vUnary visitor) op $ visit v e
+visit visitor (Unary op e)     = (vUnary visitor) op $ visit visitor e
 visit visitor (Binary op l r)  = (vBinary visitor) op (visit visitor l) (visit visitor r)
 
 -- ----------------------------------------
