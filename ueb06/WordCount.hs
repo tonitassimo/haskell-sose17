@@ -50,7 +50,7 @@ newtype Max
   = Max Int
 
 instance Monoid Max where
-  mempty  = undefined
+  mempty  = 0
   mappend = undefined
 
 -- --------------------

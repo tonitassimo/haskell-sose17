@@ -17,11 +17,13 @@ import           System.Environment (getArgs)
 --
 -- the whole main program
 
+{- wie kann man Argumente übergeben? -}
 main :: IO ()
 main
-  = do (inp :_) <- getArgs
-       text     <- T.readFile inp
-       writeResult inp (processText text)
+  = do 
+       -- (inp :_) <- getArgs
+       text     <- T.readFile "example.txt"
+       writeResult "example.txt" (processText text)
        return ()
 
 -- --------------------
@@ -38,11 +40,11 @@ type Counters
 
 processText :: T.Text -> Counters
 processText t
-  = toCounters . T.lines $ t
+  = mconcat ( map toCounters ( T.lines t ) )
 
 -- process a single line
 toCounters :: T.Text -> Counters
-toCounters l = (Sum 1, (Sum (length (T.words l)), (Sum (T.length l), ())))
+toCounters l = ( Sum 1, ( Sum ( length ( T.words l ) ), ( Sum ( T.length l ), () ) ) )
 
 -- --------------------
 --
