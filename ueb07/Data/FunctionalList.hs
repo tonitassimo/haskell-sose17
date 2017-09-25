@@ -26,6 +26,7 @@ cons e l        = singleton e . l
 
 -- dual to cons
 snoc            :: List a -> a -> List a
+snoc empty e    = singleton e
 snoc l e        = l . singleton e
 
 -- (++) for functional lists
@@ -40,13 +41,13 @@ concat (l:ls)   = append l (concat ls)
 
 -- like map for normal lists: foldr ((:) . f) []
 map             :: (a -> b) -> List a -> List b
-map f           = undefined
+map f           = fromList . P.map f . toList
 
 -- foldr with foldr for normal lists
 foldr           :: (a -> b -> b) -> b -> List a -> b
 foldr op n      = undefined
 
--- head, tail, null
+-- head, tail, null, reverse
 head            :: List a -> a
 head            = P.head . toList
 
