@@ -21,9 +21,9 @@ import           System.Environment (getArgs)
 main :: IO ()
 main
   = do 
-       -- (inp :_) <- getArgs
-       text     <- T.readFile "example.txt"
-       writeResult "example.txt" (processText text)
+       (inp :_) <- getArgs
+       text     <- T.readFile inp
+       writeResult inp (processText text)
        return ()
 
 -- --------------------
