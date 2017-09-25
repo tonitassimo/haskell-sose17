@@ -5,6 +5,8 @@ module WordCount where
 -- for frequency counts
 import qualified Data.Map           as M
 
+import qualified Data.Char          as C
+
 -- maybe uesful for sorting results
 -- frequency count
 import qualified Data.List          as L
@@ -26,9 +28,9 @@ import           System.Environment (getArgs)
 
 main :: IO ()
 main
-  = do (inp :_) <- getArgs
-       text     <- T.readFile inp
-       writeResult inp (processText text)
+  = do -- (inp :_) <- getArgs
+       text     <- T.readFile "example_simple.txt"
+       writeResult "example_simple.txt" (processText text)
        return ()
 
 -- --------------------
@@ -50,8 +52,8 @@ newtype Max
   = Max Int
 
 instance Monoid Max where
-  mempty  = 0
-  mappend = undefined
+  mempty  = Max 0
+  mappend (Max a) (Max b) = Max (max a b)
 
 -- --------------------
 
@@ -60,8 +62,8 @@ newtype FrequencyCount
   deriving (Show) -- just for testing
            
 instance Monoid FrequencyCount where
-  mempty = undefined
-  mappend = undefined
+  mempty = FC M.empty
+  mappend (FC a) (FC b) = FC (M.unionWith (+) a b)
 
 -- smart constructor
 singleFC :: T.Text -> FrequencyCount
@@ -73,11 +75,17 @@ singleFC w = FC (M.singleton w 1)
 
 processText :: T.Text -> Counters
 processText t
-  = undefined . T.lines $ t
+  = mconcat ( map toCounters ( T.lines t ) )
 
 -- process a single line
 toCounters :: T.Text -> Counters
-toCounters t = undefined
+toCounters t = (Sum 1,
+                 (Sum (length (T.words t)),
+                   (Sum (T.length t),
+                     (Max (T.length t),
+                       (Sum (T.length (T.filter C.isSpace t)),
+                         (mconcat (map singleFC (T.words t)),
+                           ()))))))
 
 -- --------------------
 --
