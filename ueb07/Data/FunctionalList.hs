@@ -45,7 +45,7 @@ map f           = fromList . P.map f . toList
 
 -- foldr with foldr for normal lists
 foldr           :: (a -> b -> b) -> b -> List a -> b
-foldr op n      = undefined
+foldr op n      = P.foldr op n . toList
 
 -- head, tail, null, reverse
 head            :: List a -> a
