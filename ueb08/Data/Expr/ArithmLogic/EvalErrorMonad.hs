@@ -170,7 +170,7 @@ mf2 op        = \ _ _ -> notImpl (pretty op ++ " not yet implemented")
 
 op2BBB :: (Bool -> Bool -> Bool) -> MF2
 op2BBB op (B b1) (B b2) = return (B (b1 `op` b2))
-op2BBB _  v1     v2     = boolExpected v1
+op2BBB _  v1     v2     = boolExpected v1 
 
 op2III :: (Integer -> Integer -> Integer) -> MF2
 op2III op (I i1) (I i2) = return (I (i1 `op` i2))
