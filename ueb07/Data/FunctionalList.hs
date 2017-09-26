@@ -37,7 +37,6 @@ append l1 l2    = l1 . l2
 concat          :: [List a] -> List a
 concat []       = empty
 concat (l:ls)   = append l (concat ls)
---concat          = P.foldr append empty
 
 -- like map for normal lists: foldr ((:) . f) []
 map             :: (a -> b) -> List a -> List b
