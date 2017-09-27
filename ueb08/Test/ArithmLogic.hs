@@ -5,11 +5,11 @@ import           Data.Pretty
 import           Data.Expr.ArithmLogic
 import qualified Data.Expr.ArithmLogic.Eval as S
 import qualified Data.Expr.ArithmLogic.EvalMonad as M
-{-
 import qualified Data.Expr.ArithmLogic.EvalErrorMonad as E
+import qualified Data.Expr.ArithmLogic.EvalListErrorMonad as L
+{-
 import qualified Data.Expr.ArithmLogic.EvalReaderErrorMonad as R
 import qualified Data.Expr.ArithmLogic.EvalReaderErrorTrans as RT
-import qualified Data.Expr.ArithmLogic.EvalListErrorMonad as L
 import qualified Data.Expr.ArithmLogic.Check as C
 -- -}
 import           Data.Pretty
@@ -38,6 +38,7 @@ e13 = pe "let x = 1 in if x > 2 then x else false"
 e14 = pe "1 ||| true"
 e15 = pe "(1 ||| 2 ||| 3) * (5 ||| 7 ||| 9)"
 e16 = pe "1 ||| 2 ||| 3"
+e17 = pe "((2 > (1 / 0)) && false)"
 
 eval1 :: Expr -> S.Value
 eval1 = S.eval
@@ -50,7 +51,7 @@ eval2 = M.eval
 
 pp2 :: Expr -> IO ()
 pp2 = putStrLn . pretty . eval2
-{-
+
 eval3 :: Expr -> E.Result E.Value
 eval3 = E.eval
 
@@ -62,7 +63,7 @@ eval4 = L.eval
 
 pp4 :: Expr -> IO ()
 pp4 = putStrLn . pretty . eval4
-
+{-
 eval5 :: Expr -> R.ResVal R.Value
 eval5 = R.eval'
 

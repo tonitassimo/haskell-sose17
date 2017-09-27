@@ -53,7 +53,8 @@ isE (E _) = True
 isE _     = False
 
 instance Functor Result where
-  fmap = undefined
+  fmap f (R r) = R (map f r)
+  fmap _ (E e) = E e
 
 instance Applicative Result where
   pure = return
@@ -74,10 +75,16 @@ instance Applicative Result where
 -- 
 -- test case e11 in EvalSimple
 
---optimistic case
+-- pessimistic case
 instance Monad Result where
-  return = R
-  >>=  =
+  return x = R [x]
+  (R xs) >>= f  = case es of
+                  []         -> R (concat (map resVal ys))
+                  (e1 : _)   -> e1
+                  where
+                    rs       = map f xs
+                    (es, ys) = partition isE rs
+  (E e) >>= _  = E e
 
 instance Alternative Result where
   empty = mzero
@@ -87,11 +94,13 @@ instance Alternative Result where
 -- all other errors are propagated
   
 instance MonadPlus Result where
-  mzero = E Mzero
-  mplus = undefined
+  mzero               = E Mzero
+  mplus (R r1) (R r2) = R (r1 ++ r2)
+  mplus (E e)      _  = E e
+  mplus    _    (E e) = E e  
   
 instance MonadError EvalError Result where
-  throwError = E
+  throwError           = E
   catchError r@(R _) _ = r
   catchError   (E e) f = f e
   
@@ -147,19 +156,33 @@ eval :: Expr -> Result Value
 eval (BLit b)          = return (B b)
 eval (ILit i)          = return (I i)
 eval (Var    x)        = freeVar x
-eval (Unary  op e1)    = undefined
+eval (Unary  op e1)    = do v1 <- eval e1
+                            mf1 op v1
 eval (Binary And e1 e2)
-                       = undefined
+                       = eval (Cond e1 e2 (BLit False))
+                       
+                       {-= do v1 <- evalBool e1
+                            if v1 
+                              then eval e2 -- expected: Result Value - actual: Bool
+                              else return (B False)-}
 eval (Binary Or  e1 e2)
-                       = undefined
+                       = eval (Cond e1 (BLit True) e2)
 eval (Binary Impl e1 e2)
-                       = undefined
+                       = eval (Binary Or (Unary Not e1) e2)
+                       
+                       --eval (Cond (Unary Not e1) (BLit True) e2)
+                       
 eval (Binary Alt  e1 e2)   -- why this special case? Semantics of Alt?
-                       = undefined
+                       = mplus (eval e1) (eval e2)
 eval (Binary op e1 e2)
-  | isStrict op        = undefined
+  | isStrict op        = do v1  <- eval e1
+                            v2  <- eval e2
+                            mf2 op v1 v2
 eval (Binary op _ _)   = notImpl ("operator " ++ pretty op)
-eval (Cond   c e1 e2)  = undefined
+eval (Cond   c e1 e2)  = do b <- evalBool c
+                            if b
+                              then eval e1
+                              else eval e2
 eval (Let _x _e1 _e2)  = notImpl "let expression"
 
 evalBool :: Expr -> Result Bool
