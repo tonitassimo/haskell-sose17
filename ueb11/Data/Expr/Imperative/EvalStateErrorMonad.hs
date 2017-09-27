@@ -60,16 +60,16 @@ instance Functor ResVal where
   fmap _ (E e) = E e
 
 instance Applicative ResVal where
-  pure = return
+  pure  = return
   (<*>) = ap
   
 instance Monad ResVal where
-  return = R
+  return    = R
   R x >>= f = f x
   E e >>= _ = E e
 
 instance MonadError EvalError ResVal where
-  throwError = E
+  throwError           = E
   catchError r@(R _) _ = r
   catchError   (E e) f = f e
   
@@ -82,33 +82,23 @@ instance (Pretty a) => Pretty (ResVal a) where
 newtype Result a = RT { runResult :: Store -> (ResVal a, Store) }
 
 instance Functor Result where
-  fmap f (RT sf)
-    = undefined
+  fmap f (RT sf) = RT (sf >>= return . f)
       
 instance Applicative Result where
   pure  = return
   (<*>) = ap
 
 instance Monad Result where
-  return x
-    = undefined
-
-  RT sf >>= f
-    = undefined
+  return x    = undefined
+  RT sf >>= f = undefined
 
 instance MonadError EvalError Result where
-  throwError e
-    = undefined
-  
-  catchError (RT sf) handler
-    = undefined
+  throwError e               = undefined  
+  catchError (RT sf) handler = undefined
 
 instance MonadState Store Result where
-  get
-    = undefined
-
-  put st
-    = undefined
+  get    = undefined
+  put st = undefined
   
 -- ----------------------------------------
 --
