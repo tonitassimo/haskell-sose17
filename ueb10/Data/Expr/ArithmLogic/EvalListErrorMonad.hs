@@ -74,9 +74,10 @@ instance Applicative Result where
 -- 
 -- test case e11 in EvalSimple
 
+--optimistic case
 instance Monad Result where
-  return = undefined
-  (>>=)  = undefined
+  return = R
+  >>=  =
 
 instance Alternative Result where
   empty = mzero

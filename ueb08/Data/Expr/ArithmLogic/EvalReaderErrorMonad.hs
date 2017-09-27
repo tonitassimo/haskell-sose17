@@ -93,7 +93,9 @@ instance Monad Result where
 
 instance MonadError EvalError Result where
   throwError e               = RR $ \_ -> throwError e
-  catchError (RR ef) handler = undefined
+  catchError (RR ef) handler = RR $ \env -> case ef env of
+                                            E e -> unRR (handler e) env
+                                            x   -> x
 
 instance MonadReader Env Result where
   ask             = RR $ return
@@ -140,6 +142,7 @@ eval (BLit b)          = return (B b)
 eval (ILit i)          = return (I i)
 eval (Var    x)        = do v <- asks $ M.lookup x
                             maybe (freeVar x) return v
+                            
 eval (Unary  op e1)    = do v1  <- eval e1
                             mf1 op v1
 
