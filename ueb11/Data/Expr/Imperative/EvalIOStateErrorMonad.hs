@@ -2,21 +2,26 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Data.Expr.Imperative.EvalStateErrorMonad where
+module Data.Expr.Imperative.EvalIOStateErrorMonad where
 
 import Prelude hiding (lookup)
 
 import Control.Applicative (Applicative(..))
 import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Except
 import Control.Monad.State
 
 import Data.Expr.Imperative.Types
 import Data.Expr.Imperative.Constr
+import Data.Expr.Imperative.Parse (parseLit)
 import Data.Pretty
 
+import           Data.Char (isSpace)
 import qualified Data.List as L
 import qualified Data.Map  as M
+
+import System.IO
 
 -- ----------------------------------------
 -- evaluation of simple imperative programs
@@ -60,16 +65,16 @@ instance Functor ResVal where
   fmap _ (E e) = E e
 
 instance Applicative ResVal where
-  pure  = return
+  pure = return
   (<*>) = ap
   
 instance Monad ResVal where
-  return    = R
+  return = R
   R x >>= f = f x
   E e >>= _ = E e
 
 instance MonadError EvalError ResVal where
-  throwError           = E
+  throwError = E
   catchError r@(R _) _ = r
   catchError   (E e) f = f e
   
@@ -79,36 +84,49 @@ instance (Pretty a) => Pretty (ResVal a) where
 
 -- ----------------------------------------
 
-newtype Result a = RT { runResult :: Store -> (ResVal a, Store) }
+newtype Result a = RT { runResult :: Store -> IO (ResVal a, Store) }
 
 instance Functor Result where
-  fmap f (RT sf) = RT $ \s ->
-                      let (res, st') = sf s in (fmap f res, st')
-      
+  fmap f sf = do r <- sf
+                 return (f r)
+    
 instance Applicative Result where
   pure  = return
   (<*>) = ap
 
 instance Monad Result where
-  return x    = RT $ \s -> (return x, s)
-  RT sf >>= f = RT $ \s ->
-                   let (res, st') = sf s in
-                       case res of
-                         E e -> (E e, st')
+  return x    = RT $ \ st -> return (return x, st)            
+            
+  RT sf >>= f = RT $ \s ->  
+                   do (res, st') <- sf s
+                      case res of
+                         E e -> return (E e, st')
                          R r -> let RT sf' = f r in sf' st'
 
 instance MonadError EvalError Result where
-  throwError e               = RT $ \s -> (E e, s)  
-  catchError (RT sf) handler = RT $ \s ->
-                                  let (res, st') = sf s in
-                                      case res of
-                                        E e -> let RT sf' = handler e in sf' st'
-                                        R r -> (R r, st')
+  throwError e
+    = RT $ \ st -> return (throwError e, st)
+  
+  catchError (RT sf) handler
+    = RT $ \ st ->
+            do (rv, st') <- sf st
+               case rv of
+                E e
+                  -> let RT sf' = handler e
+                     in
+                      sf' st'
+                R _
+                  -> return (rv, st')
 
 instance MonadState Store Result where
-  get    = RT $ \s -> (R s, s)
-  put st = RT $ \_ -> (R (), st)
-  
+  get    = RT $ \ st -> return (R st, st)  
+
+  put st = RT $ \_ -> return (R (), st)
+
+instance MonadIO Result where
+  liftIO io = RT $ \ st -> do v <- io
+                              return (return v, st)
+                              
 -- ----------------------------------------
 --
 -- variable store
@@ -141,6 +159,7 @@ data EvalError
   | ValErr  String Value 
   | Div0
   | NoLValue Expr
+  | NoParse
   deriving (Show)
 
 instance Pretty EvalError where
@@ -149,6 +168,7 @@ instance Pretty EvalError where
   pretty (ValErr e g) = e ++ " value expected, but got: " ++ pretty g
   pretty Div0         = "divide by zero"
   pretty (NoLValue e) = "no lvalue: " ++ pretty e
+  pretty NoParse      = "not a value"
   
 boolExpected :: Value -> Result a
 boolExpected = throwError . ValErr "Bool"
@@ -168,9 +188,52 @@ div0  = throwError Div0
 noLValue :: Expr -> Result a
 noLValue = throwError . NoLValue
 
+noParse :: Result a
+noParse = throwError NoParse
+
+-- ----------------------------------------
+--
+-- input/output primitives (always boring)
+
+readValue :: String -> Result Value
+readValue msg
+  = do prompt msg
+       l <- getLine'
+       getVal (parseLit l)
+  where
+    prompt "" = return ()
+    prompt s  = liftIO $
+                do hPutStr stdout s
+                   hFlush  stdout
+                   
+    getLine'
+      = do l <- liftIO $ hGetLine stdin
+           if all isSpace l
+             then getLine'
+             else return l
+        
+    getVal Nothing     = noParse
+    getVal (Just e)    = toValue e
+    
+    toValue (BLit b)   = return (B b)
+    toValue (ILit i)   = return (I i)
+    toValue _          = noParse
+
+writeValue :: String -> Value -> Result ()
+writeValue s v
+  = do prompt s
+       putLine' (pretty v)
+  where
+    prompt "" = return ()
+    prompt x  = liftIO $ hPutStr stdout x
+
+    putLine' l = liftIO $
+                 do hPutStrLn stdout l
+                    hFlush stdout
+                    
 -- ----------------------------------------
 
-eval' :: Expr -> (ResVal Value, Store)
+eval' :: Expr -> IO (ResVal Value, Store)
 eval' e = runResult (eval e) emptyStore
 
 eval :: Expr -> Result Value
@@ -183,41 +246,38 @@ eval (Unary preOp e)
   | preOp `elem` [PreIncr, PreDecr]
                        = do i <- evalLValue e
                             v <- readVar i
-                            z <- mf1 preOp v
-                            writeVar i z
-                            return z                            
+                            r <- mf1 preOp v
+                            writeVar i r
+                            return r
 
 eval (Unary postOp e)
   | postOp `elem` [PostIncr, PostDecr]
-                       = do i <- evalLValue e  -- use evalLValue, readVar, writeVar
-                            v <- readVar i                           
-                            z <- mf1 postOp v
-                            writeVar i z
+                       = do i <- evalLValue e
+                            v <- readVar i
+                            r <- mf1 postOp v
+                            writeVar i r
                             return v
-                            
-                          
+                        
 eval (Unary  op e1)    = do v1  <- eval e1
                             mf1 op v1
 
 eval (Binary Assign lhs rhs)
-                       = do i <- evalLValue lhs  -- use evalLValue, writeVar
-                            v <- eval rhs
+                       = do i <- evalLValue lhs
+                            v <- eval       rhs
                             writeVar i v
-                            return v                  
+                            return v
 
 eval (Binary Seq e1 e2)
-                       = do v1 <- eval e1
-                            v2 <- eval e2
-                            return v2
-                            
+                       = do _ <- eval e1
+                            eval e2
 eval (Binary And e1 e2)
-                       = eval (Cond e1 e2 (BLit False))
+                       = eval (cond e1 e2 false)
 
 eval (Binary Or  e1 e2)
-                       = eval (Cond e1 (BLit True) e2) -- similar to And
+                       = eval (cond e1 true e2)
 
 eval (Binary Impl e1 e2)
-                       = eval (Binary Or (Unary Not e1) e2) -- similar to And
+                       = eval (cond (not' e1) true e2)
 
 eval (Binary op e1 e2)
   | isStrict op        = do v1 <- eval e1
@@ -231,15 +291,17 @@ eval (Cond   c e1 e2)  = do b <- evalBool c
                               then eval e1
                               else eval e2
 
-eval e@(While c body)   = do cv <- evalBool c
-                             if cv then 
-                                do _ <- eval body
-                                   eval (While c body)
-                             else
-                                return (B False)
+eval e@(While c body)   = do b <- evalBool c
+                             if b
+                               then do _ <- eval body
+                                       eval e
+                               else return (B b)
 
-eval (Read _)           = notImpl "read"  -- needs IO
-eval (Write _ _)        = notImpl "write" -- needs IO
+eval (Read msg)         = readValue msg
+
+eval (Write msg e)      = do v <- eval e
+                             writeValue msg v
+                             return v
                           
 evalBool :: Expr -> Result Bool
 evalBool e
@@ -277,9 +339,9 @@ mf1 UPlus      = op1II id
 mf1 UMinus     = op1II (0 -)
 mf1 Signum     = op1II signum
 mf1 PreIncr    = flip (mf2 Plus ) (I 1)
-mf1 PreDecr    = flip (mf2 Minus ) (I 1) -- similar to PreIncr
-mf1 PostIncr   = flip (mf2 Plus ) (I 1) -- similar to PreIncr
-mf1 PostDecr   = flip (mf2 Minus ) (I 1) -- similar to PreIncr
+mf1 PreDecr    = flip (mf2 Minus) (I 1)
+mf1 PostIncr   = flip (mf2 Plus ) (I 1)
+mf1 PostDecr   = flip (mf2 Minus) (I 1)
 -- mf1 op         = \ _ -> notImpl (show op)
   
 op1BB :: (Bool -> Bool) -> MF1
