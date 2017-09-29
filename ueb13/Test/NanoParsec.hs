@@ -71,14 +71,14 @@ factor :: Parser Expr
 factor = int
          <|> parens expr
 
-infixOp :: String -> (a -> a -> a) -> Parser (a -> a -> a)
-infixOp x f = reserved x >> return f
-
 addop :: Parser (Expr -> Expr -> Expr)
 addop = (infixOp "+" Add) <|> (infixOp "-" Sub)
 
 mulop :: Parser (Expr -> Expr -> Expr)
 mulop = infixOp "*" Mul
+
+infixOp :: String -> (a -> a -> a) -> Parser (a -> a -> a)
+infixOp x f = reserved x >> return f
 
 -- ----------------------------------------
 -- the main prog
