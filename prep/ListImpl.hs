@@ -54,6 +54,9 @@ module ListImpl where
         | xs == Empty = Cons x ys
         | otherwise   = Cons x (concat' xs ys)
 
+    reduce' :: List' (List' a) -> List' a
+    reduce' = undefined
+
     -- Duplikate entfernen
     removeDups :: List' Int -> List' Int
     removeDups Empty          = Empty
@@ -101,5 +104,5 @@ module ListImpl where
         (Cons f fs) <*> (Cons v vs) = Cons (f v) (fs <*> vs)        
 
     instance Monad List' where
-        return l  = Cons l Empty
-        l >>= f   = _hole
+        return l = Cons l Empty
+        vs >>= f = undefined --concat' (fmap f vs)
