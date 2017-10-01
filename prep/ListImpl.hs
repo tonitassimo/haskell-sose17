@@ -8,8 +8,10 @@ module ListImpl where
         Empty == Empty             = True
         (Cons x xs) == (Cons y ys) = 
             
-            length' (Cons x xs) == length' (Cons y ys) &&
-            x == y &&
+            length' (Cons x xs) == length' (Cons y ys)
+            &&
+            x == y
+            &&
             xs == ys
             
 
@@ -98,6 +100,9 @@ module ListImpl where
     even' :: List' Int -> List' Int
     even' lst = filter' lst (\n -> mod n 2 == 0)
 
+    testList :: Num a => List' a
+    testList = (Cons 1 (Cons 2 (Cons 3 (Cons 4 (Cons 5 Empty)))))
+
     -- Functor-Definition
     instance Functor List' where
         fmap = map'
@@ -112,3 +117,7 @@ module ListImpl where
     instance Monad List' where
         return l = Cons l Empty
         vs >>= f = reduce' (fmap f vs)
+    
+    main :: Num a => List' a
+    main = do lst <- testList
+              return lst
